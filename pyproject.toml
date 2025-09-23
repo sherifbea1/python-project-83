@@ -6,9 +6,11 @@ authors = [{ name = "Your Name", email = "you@example.com" }]
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "beautifulsoup4>=4.13.5",
     "flask",
     "gunicorn",
     "python-dotenv",
+    "requests>=2.32.5",
 ]
 
 [tool.uv]
