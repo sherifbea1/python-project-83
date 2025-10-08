@@ -1,0 +1,22 @@
+<table class="table table-bordered" data-test="urls">
+    <thead class="table-light">
+        <tr>
+            <th>ID</th>
+            <th>Адрес</th>
+            <th>Дата добавления</th>
+            <th>Действие</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for url in urls %}
+        <tr>
+            <td>{{ url.id }}</td>
+            <td>{{ url.name }}</td>
+            <td>{{ url.created_at }}</td>
+            <td>
+                <a class="btn btn-primary btn-sm" href="{{ url_for('show_url', id=url.id) }}">Проверить</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

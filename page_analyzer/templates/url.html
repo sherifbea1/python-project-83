@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Страница URL</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">Анализатор страниц</a>
+            <a class="btn btn-light" href="{{ url_for('list_urls') }}">Все URL</a>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <h1 class="mb-3">{{ url.name }}</h1>
+
+        <form action="{{ url_for('add_check', id=url.id) }}" method="post">
+            <button class="btn btn-primary mb-4">Проверить страницу</button>
+        </form>
+
+        <h2>История проверок</h2>
+        {% if url.checks %}
+            <table class="table table-bordered" data-test="url">
+                <thead class="table-light">
+                    <tr>
+                        <th>Дата</th>
+                        <th>Статус</th>
+                        <th>Title</th>
+                        <th>H1</th>
+                        <th>Meta Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for check in url.checks %}
+                        <tr>
+                            <td>{{ check.created_at }}</td>
+                            <td>{{ check.status_code or 'Ошибка' }}</td>
+                            <td>{{ check.title or '' }}</td>
+                            <td>{{ check.h1 or '' }}</td>
+                            <td>{{ check.description or '' }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>Проверок ещё не было.</p>
+        {% endif %}
+    </div>
+
+    <footer class="bg-light text-center py-4 mt-5">
+        <p>&copy; 2025 Анализатор страниц</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
