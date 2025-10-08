@@ -5,7 +5,7 @@ __pycache__/
 *.pyd
 *.swp
 
-# Environment
+# Virtual environments
 .env
 .venv/
 venv/
@@ -13,8 +13,9 @@ ENV/
 env/
 *.env
 
-# VSCode
+# VSCode / PyCharm
 .vscode/
+.idea/
 
 # Logs
 *.log
@@ -25,9 +26,17 @@ dist/
 *.egg-info/
 *.egg
 
-# OS / system
+# OS / System
 .DS_Store
 Thumbs.db
 
-# Cache
+# Databases / Cache
 *.sqlite3
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# uv / Poetry
+.uv/
