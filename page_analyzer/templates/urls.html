@@ -4,6 +4,8 @@
             <th>ID</th>
             <th>Адрес</th>
             <th>Дата добавления</th>
+            <th>Код ответа</th>
+            <th>Последняя проверка</th>
             <th>Действие</th>
         </tr>
     </thead>
@@ -13,6 +15,8 @@
             <td>{{ url.id }}</td>
             <td>{{ url.name }}</td>
             <td>{{ url.created_at }}</td>
+            <td>{{ url.last_status or '—' }}</td>
+            <td>{{ url.last_check or '—' }}</td>
             <td>
                 <a class="btn btn-primary btn-sm" href="{{ url_for('show_url', id=url.id) }}">Проверить</a>
             </td>
