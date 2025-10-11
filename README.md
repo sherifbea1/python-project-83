@@ -1,5 +1,6 @@
 ### Hexlet tests and linter status:
 [![Actions Status](https://github.com/sherifbea1/python-project-83/actions/workflows/hexlet-check.yml/badge.svg)](https://github.com/sherifbea1/python-project-83/actions)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=sherifbea1_python-project-83&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=sherifbea1_python-project-83)
 
 Deploy: https://python-project-83-hjbe.onrender.com
 
@@ -39,5 +40,5 @@ make build
 ### Start the application with the following command:
 
 ```
-make start
+make dev
 ```
