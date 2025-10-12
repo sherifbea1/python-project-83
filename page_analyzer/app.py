@@ -65,13 +65,21 @@ def add_url():
         return render_template('index.html'), 422
 
     parsed = urlparse(raw_url)
-    if not parsed.netloc:
+
+    # Если есть схема — она должна быть http или https
+    if parsed.scheme:
+        if parsed.scheme not in ("http", "https"):
+            flash('Некорректный URL', 'danger')
+            return render_template('index.html'), 422
+    else:
+        # Если схемы нет, попробуем добавить http и повторно распарсить
         parsed = urlparse(f"http://{raw_url}")
-    if not parsed.netloc:
-        flash('Некорректный URL', 'danger')
-        return render_template('index.html'), 422
+        if not parsed.netloc:
+            flash('Некорректный URL', 'danger')
+            return render_template('index.html'), 422
 
     normalized = normalize_url(raw_url)
+
     conn = get_conn()
     cur = conn.cursor()
     try:
@@ -81,13 +89,15 @@ def add_url():
         )
         row = cur.fetchone()
         conn.commit()
+
         if row:
             flash('Страница успешно добавлена', 'success')
             return redirect(url_for('show_url', id=row['id']))
-        cur.execute("SELECT id FROM urls WHERE name = %s;", (normalized,))
-        existing = cur.fetchone()
-        flash('Страница уже существует', 'info')
-        return redirect(url_for('show_url', id=existing['id']))
+        else:
+            cur.execute("SELECT id FROM urls WHERE name = %s;", (normalized,))
+            existing = cur.fetchone()
+            flash('Страница уже существует', 'info')
+            return redirect(url_for('show_url', id=existing['id']))
     finally:
         cur.close()
         conn.close()
