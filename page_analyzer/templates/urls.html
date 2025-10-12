@@ -12,8 +12,9 @@
                 <tr>
                     <th scope="col">ID</th>
                     <th scope="col">Имя</th>
-                    <th scope="col">Последний код ответа</th>
-                    <th scope="col">Дата последней проверки</th>
+                    <th scope="col">Дата добавления</th>
+                    <th scope="col">Код ответа</th>
+                    <th scope="col">Последняя проверка</th>
                 </tr>
             </thead>
             <tbody>
@@ -25,12 +26,13 @@
                                 {{ url.name }}
                             </a>
                         </td>
+                        <td>{{ url.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                         <td>{{ url.last_status or '—' }}</td>
                         <td>
                             {% if url.last_check %}
                                 {{ url.last_check.strftime('%Y-%m-%d %H:%M:%S') }}
                             {% else %}
-                                —
+                                — 
                             {% endif %}
                         </td>
                     </tr>

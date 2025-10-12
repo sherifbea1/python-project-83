@@ -170,12 +170,11 @@ def add_check(id):
         conn.close()
         return redirect(url_for('list_urls'))
 
-    result = check_page(url['name'])
-
-    if result is None:
-        flash("Произошла ошибка при проверке", "danger")
-    else:
-        try:
+    try:
+        result = check_page(url['name'])
+        if result is None:
+            flash("Произошла ошибка при проверке", "danger")
+        else:
             cur.execute(
                 """
                 INSERT INTO url_checks (url_id, status_code, title, h1, description)
@@ -185,11 +184,12 @@ def add_check(id):
             )
             conn.commit()
             flash("Страница успешно проверена", "success")
-        except Exception:
-            conn.rollback()
-            app.logger.exception("DB insert failed for url_checks")
-            flash("Произошла ошибка при сохранении результата проверки", "danger")
+    except Exception:
+        conn.rollback()
+        app.logger.exception("Ошибка при проверке страницы")
+        flash("Произошла ошибка при проверке", "danger")
 
     cur.close()
     conn.close()
     return redirect(url_for('show_url', id=id))
+
