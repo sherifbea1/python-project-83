@@ -33,7 +33,11 @@ def parse_page(html_text: str) -> dict:
     desc_tag = soup.find("meta", attrs={"name": "description"})
     title = title_tag.text.strip() if title_tag else None
     h1 = h1_tag.text.strip() if h1_tag else None
-    description = desc_tag.get("content").strip() if desc_tag and desc_tag.get("content") else None
+    description = (
+        desc_tag.get("content").strip()
+        if desc_tag and desc_tag.get("content")
+        else None
+    )
     return {"title": title, "h1": h1, "description": description}
 
 
@@ -65,14 +69,11 @@ def add_url():
         return render_template('index.html'), 422
 
     parsed = urlparse(raw_url)
-
-    # Если есть схема — она должна быть http или https
     if parsed.scheme:
         if parsed.scheme not in ("http", "https"):
             flash('Некорректный URL', 'danger')
             return render_template('index.html'), 422
     else:
-        # Если схемы нет, попробуем добавить http и повторно распарсить
         parsed = urlparse(f"http://{raw_url}")
         if not parsed.netloc:
             flash('Некорректный URL', 'danger')
@@ -84,7 +85,10 @@ def add_url():
     cur = conn.cursor()
     try:
         cur.execute(
-            "INSERT INTO urls (name) VALUES (%s) ON CONFLICT (name) DO NOTHING RETURNING id;",
+            (
+                "INSERT INTO urls (name) VALUES (%s) "
+                "ON CONFLICT (name) DO NOTHING RETURNING id;"
+            ),
             (normalized,),
         )
         row = cur.fetchone()
@@ -107,7 +111,8 @@ def add_url():
 def list_urls():
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute("""
+    cur.execute(
+        """
         SELECT
             u.id,
             u.name,
@@ -123,7 +128,8 @@ def list_urls():
             LIMIT 1
         ) lc ON true
         ORDER BY u.id DESC;
-    """)
+        """
+    )
     urls = cur.fetchall()
     cur.close()
     conn.close()
@@ -142,8 +148,7 @@ def show_url(id):
         conn.close()
         return redirect(url_for('list_urls'))
     cur.execute(
-        "SELECT * FROM url_checks WHERE url_id = %s ORDER BY created_at DESC;",
-        (id,)
+        "SELECT * FROM url_checks WHERE url_id = %s ORDER BY created_at DESC;", (id,)
     )
     checks = cur.fetchall()
     url['checks'] = checks
@@ -170,10 +175,17 @@ def add_check(id):
         else:
             cur.execute(
                 """
-                INSERT INTO url_checks (url_id, status_code, title, h1, description)
-                VALUES (%s, %s, %s, %s, %s);
+                INSERT INTO url_checks (
+                    url_id, status_code, title, h1, description
+                ) VALUES (%s, %s, %s, %s, %s);
                 """,
-                (id, result['status_code'], result['title'], result['h1'], result['description'])
+                (
+                    id,
+                    result['status_code'],
+                    result['title'],
+                    result['h1'],
+                    result['description'],
+                )
             )
             conn.commit()
             flash("Страница успешно проверена", "success")
