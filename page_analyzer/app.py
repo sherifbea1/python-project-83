@@ -72,8 +72,11 @@ def index():
 @app.post('/urls')
 def add_url():
     raw_url = request.form.get('url')
+
+    # Валидация: пустой или слишком длинный
     if not raw_url or len(raw_url) > 255:
         flash('Некорректный URL', 'danger')
+        # вернуть index (форму) с кодом 422 — тесты ожидают именно это
         return render_template('index.html'), 422
 
     normalized = normalize_url(raw_url)

@@ -17,8 +17,8 @@
             <tr>
                 <th>Дата</th>
                 <th>Статус</th>
-                <th>Title</th>
                 <th>H1</th>
+                <th>Title</th>
                 <th>Meta Description</th>
             </tr>
         </thead>
@@ -33,15 +33,15 @@
                                 —
                             {% endif %}
                         </td>
-                        <td>{{ check.status_code or 'Ошибка' }}</td>
-                        <td>{{ check.title or '' }}</td>
-                        <td>{{ check.h1 or '' }}</td>
-                        <td>{{ check.description or '' }}</td>
+                        <td>{{ check.status_code or '—' }}</td>
+                        <td>{{ check.h1 or '—' }}</td>
+                        <td>{{ check.title or '—' }}</td>
+                        <td>{{ check.description or '—' }}</td>
                     </tr>
                 {% endfor %}
             {% else %}
                 <tr>
-                    <td colspan="5" class="text-muted">Проверок ещё не было.</td>
+                    <td colspan="5" class="text-muted text-center">Проверок ещё не было.</td>
                 </tr>
             {% endif %}
         </tbody>
