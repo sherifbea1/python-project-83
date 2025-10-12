@@ -74,7 +74,7 @@ def add_url():
     raw_url = request.form.get('url')
     if not raw_url or len(raw_url) > 255:
         flash('Некорректный URL', 'danger')
-        return render_template('index.html'), 422
+        return redirect(url_for('index'))
 
     normalized = normalize_url(raw_url)
 
@@ -188,8 +188,9 @@ def add_check(id):
         conn.rollback()
         app.logger.exception("Ошибка при проверке страницы")
         flash("Произошла ошибка при проверке", "danger")
+    finally:
+        cur.close()
+        conn.close()
 
-    cur.close()
-    conn.close()
     return redirect(url_for('show_url', id=id))
 
