@@ -69,12 +69,12 @@ def index():
     return render_template('index.html')
 
 
-@app.post('/')
+@app.post('/urls')
 def add_url():
     raw_url = request.form.get('url')
     if not raw_url or len(raw_url) > 255:
         flash('Некорректный URL', 'danger')
-        return redirect(url_for('index'))
+        return render_template('index.html'), 422
 
     normalized = normalize_url(raw_url)
 
