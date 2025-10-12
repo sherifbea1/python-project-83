@@ -3,30 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Анализатор страниц</title>
+    <title>{% block title %}Анализатор страниц{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        footer {
+            border-top: 1px solid #dee2e6;
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('index') }}">Анализатор страниц</a>
+            <div>
+                <a class="nav-link text-white d-inline-block" href="{{ url_for('list_urls') }}">Сайты</a>
+            </div>
         </div>
     </nav>
 
-    <div class="container mt-4">
+
+    <main class="container mt-4 mb-5">
+
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             {% for category, message in messages %}
-              <div class="alert alert-{{ category }}">{{ message }}</div>
+              <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
             {% endfor %}
           {% endif %}
         {% endwith %}
 
-        {% block content %}{% endblock %}
-    </div>
 
-    <footer class="bg-light text-center py-3 mt-5">
-        <p>&copy; 2025 Анализатор страниц</p>
+        {% block content %}{% endblock %}
+    </main>
+
+
+    <footer class="bg-light text-center py-4">
+        <p class="mb-0">&copy; 2025 Анализатор страниц</p>
     </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

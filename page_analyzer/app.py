@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from urllib.parse import urlparse
+import requests
+from bs4 import BeautifulSoup
 
 load_dotenv()
 
@@ -13,12 +15,55 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'default-secret')
 DATABASE_URL = os.getenv('DATABASE_URL')
 
 
-# ---------- Подключение к базе ----------
 def get_conn():
     return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
 
 
-# ---------- Главная страница ----------
+def normalize_url(input_url: str) -> str:
+    """Нормализует URL: добавляет схему если нужно и возвращает scheme://netloc."""
+    parsed = urlparse(input_url)
+    if not parsed.scheme:
+        parsed = urlparse(f"http://{input_url}")
+    return f"{parsed.scheme}://{parsed.netloc}"
+
+
+def parse_page(html_text: str) -> dict:
+    """Парсит HTML и возвращает title, h1, description (или None)."""
+    soup = BeautifulSoup(html_text, "html.parser")
+    title_tag = soup.find("title")
+    h1_tag = soup.find("h1")
+    desc_tag = soup.find("meta", attrs={"name": "description"})
+
+    title = title_tag.text.strip() if title_tag else None
+    h1 = h1_tag.text.strip() if h1_tag else None
+    description = None
+    if desc_tag:
+        description = desc_tag.get("content")
+        if description:
+            description = description.strip()
+    return {"title": title, "h1": h1, "description": description}
+
+
+def check_page(url: str):
+    """
+    Делает реальный HTTP-запрос к url, использует raise_for_status().
+    При успехе возвращает dict {status_code, title, h1, description}.
+    При ошибке возвращает None.
+    """
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        parsed = parse_page(response.text)
+        return {
+            "status_code": response.status_code,
+            "title": parsed["title"],
+            "h1": parsed["h1"],
+            "description": parsed["description"],
+        }
+    except requests.RequestException:
+        return None
+
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -26,25 +71,19 @@ def index():
 
 @app.post('/')
 def add_url():
-    url = request.form.get('url')
-
-    # Валидация URL
-    if not url or len(url) > 255:
+    raw_url = request.form.get('url')
+    if not raw_url or len(raw_url) > 255:
         flash('Некорректный URL', 'danger')
         return render_template('index.html'), 422
 
-    parsed = urlparse(url)
-    if not parsed.scheme:
-        parsed = urlparse(f"http://{url}")
-
-    normalized_url = f"{parsed.scheme}://{parsed.netloc}"
+    normalized = normalize_url(raw_url)
 
     conn = get_conn()
     cur = conn.cursor()
     try:
         cur.execute(
-            "INSERT INTO urls (name) VALUES (%s) ON CONFLICT (name) DO NOTHING RETURNING id",
-            (normalized_url,)
+            "INSERT INTO urls (name) VALUES (%s) ON CONFLICT (name) DO NOTHING RETURNING id;",
+            (normalized,),
         )
         row = cur.fetchone()
         conn.commit()
@@ -53,7 +92,7 @@ def add_url():
             flash('Страница успешно добавлена', 'success')
             return redirect(url_for('show_url', id=row['id']))
         else:
-            cur.execute("SELECT id FROM urls WHERE name = %s;", (normalized_url,))
+            cur.execute("SELECT id FROM urls WHERE name = %s;", (normalized,))
             existing = cur.fetchone()
             flash('Страница уже существует', 'info')
             return redirect(url_for('show_url', id=existing['id']))
@@ -62,21 +101,30 @@ def add_url():
         conn.close()
 
 
-# ---------- Список всех URL ----------
 @app.route('/urls')
 def list_urls():
+    """
+    Возвращает список URL вместе с информацией о последней проверке:
+    last_status и last_check (если есть).
+    """
     conn = get_conn()
     cur = conn.cursor()
     cur.execute("""
         SELECT
-          urls.id,
-          urls.name,
-          urls.created_at,
-          MAX(url_checks.created_at) AS last_check
-        FROM urls
-        LEFT JOIN url_checks ON urls.id = url_checks.url_id
-        GROUP BY urls.id
-        ORDER BY urls.id DESC;
+            u.id,
+            u.name,
+            u.created_at,
+            lc.status_code AS last_status,
+            lc.created_at AS last_check
+        FROM urls u
+        LEFT JOIN LATERAL (
+            SELECT status_code, created_at
+            FROM url_checks uc
+            WHERE uc.url_id = u.id
+            ORDER BY created_at DESC
+            LIMIT 1
+        ) lc ON true
+        ORDER BY u.id DESC;
     """)
     urls = cur.fetchall()
     cur.close()
@@ -84,7 +132,6 @@ def list_urls():
     return render_template('urls.html', urls=urls)
 
 
-# ---------- Просмотр конкретного URL и его проверок ----------
 @app.route('/urls/<int:id>')
 def show_url(id):
     conn = get_conn()
@@ -110,13 +157,11 @@ def show_url(id):
     return render_template('url.html', url=url)
 
 
-# ---------- Добавление новой проверки ----------
 @app.post('/urls/<int:id>/checks')
 def add_check(id):
     conn = get_conn()
     cur = conn.cursor()
 
-    # Проверяем, что URL существует
     cur.execute("SELECT * FROM urls WHERE id = %s;", (id,))
     url = cur.fetchone()
     if not url:
@@ -125,14 +170,26 @@ def add_check(id):
         conn.close()
         return redirect(url_for('list_urls'))
 
-    # Создаём запись проверки (только url_id и created_at)
-    cur.execute(
-        "INSERT INTO url_checks (url_id) VALUES (%s);",
-        (id,)
-    )
-    conn.commit()
+    result = check_page(url['name'])
+
+    if result is None:
+        flash("Произошла ошибка при проверке", "danger")
+    else:
+        try:
+            cur.execute(
+                """
+                INSERT INTO url_checks (url_id, status_code, title, h1, description)
+                VALUES (%s, %s, %s, %s, %s);
+                """,
+                (id, result['status_code'], result['title'], result['h1'], result['description'])
+            )
+            conn.commit()
+            flash("Страница успешно проверена", "success")
+        except Exception:
+            conn.rollback()
+            app.logger.exception("DB insert failed for url_checks")
+            flash("Произошла ошибка при сохранении результата проверки", "danger")
+
     cur.close()
     conn.close()
-
-    flash("Проверка страницы создана", "success")
     return redirect(url_for('show_url', id=id))

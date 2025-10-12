@@ -1,35 +1,25 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Анализатор страниц</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-    <div class="container">
-      <a class="navbar-brand" href="/">Анализатор страниц</a>
-    </div>
-  </nav>
+{% extends "base.html" %}
 
-  <main class="container text-center mt-5">
+{% block title %}Анализатор страниц{% endblock %}
+
+{% block content %}
+<div class="text-center mt-5">
     <h1 class="mb-4">Анализатор страниц</h1>
-    <form action="/" method="post" class="row justify-content-center">
-      <div class="col-md-6">
-        <div class="input-group input-group-lg">
-          <input type="url" class="form-control" name="url" placeholder="https://example.com" required>
-          <button class="btn btn-primary" type="submit">Проверить</button>
+    <p class="lead text-muted mb-5">Проверяйте сайты на SEO ошибки</p>
+
+    <form action="{{ url_for('add_url') }}" method="post" class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="input-group input-group-lg">
+                <input type="url" class="form-control" name="url" placeholder="https://example.com" required>
+                <button class="btn btn-primary" type="submit">Проверить</button>
+            </div>
         </div>
-      </div>
-    </form>0
-  </main>
+    </form>
+</div>
 
-  <footer class="text-center mt-5 py-4 border-top">
-    <a href="https://ru.hexlet.io/" target="_blank">Hexlet</a>
-    
-  </footer>
-
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+<div class="text-center mt-5">
+    <p class="text-muted">
+        <a href="https://ru.hexlet.io/" target="_blank" class="text-decoration-none">Hexlet</a>
+    </p>
+</div>
+{% endblock %}

@@ -1,69 +1,50 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Страница URL</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="/">Анализатор страниц</a>
-            <a class="btn btn-light" href="{{ url_for('list_urls') }}">Все URL</a>
-        </div>
-    </nav>
+{% extends "base.html" %}
 
-    <div class="container mt-5">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}" role="alert">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+{% block title %}{{ url.name }} — Анализатор страниц{% endblock %}
 
-        <h1 class="mb-3">{{ url.name }}</h1>
+{% block content %}
+<div class="my-5">
+    <h1 class="mb-4">{{ url.name }}</h1>
 
-        <form action="{{ url_for('add_check', id=url.id) }}" method="post">
-            <button class="btn btn-primary mb-4">Проверить страницу</button>
-        </form>
+    <form action="{{ url_for('add_check', id=url.id) }}" method="post" class="mb-4">
+        <button type="submit" class="btn btn-primary">Запустить проверку</button>
+    </form>
 
-        <h2>История проверок</h2>
-        {% if url.checks %}
-            <table class="table table-bordered" data-test="checks">
-                <thead class="table-light">
+    <h2 class="h4 mb-3">История проверок</h2>
+
+    {% if url.checks %}
+        <table class="table table-bordered align-middle" data-test="checks">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col">ID</th>
+                    <th scope="col">Код ответа</th>
+                    <th scope="col">h1</th>
+                    <th scope="col">Title</th>
+                    <th scope="col">Description</th>
+                    <th scope="col">Дата проверки</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for check in url.checks %}
                     <tr>
-                        <th>Дата</th>
-                        <th>Статус</th>
-                        <th>Title</th>
-                        <th>H1</th>
-                        <th>Meta Description</th>
+                        <td>{{ check.id }}</td>
+                        <td>{{ check.status_code or '—' }}</td>
+                        <td>{{ check.h1 or '—' }}</td>
+                        <td>{{ check.title or '—' }}</td>
+                        <td>{{ check.description or '—' }}</td>
+                        <td>
+                            {% if check.created_at %}
+                                {{ check.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
                     </tr>
-                </thead>
-                <tbody>
-                    {% for check in url.checks %}
-                        <tr>
-                            <td>{{ check.created_at }}</td>
-                            <td>{{ check.status_code or 'Ошибка' }}</td>
-                            <td>{{ check.title or '' }}</td>
-                            <td>{{ check.h1 or '' }}</td>
-                            <td>{{ check.description or '' }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <p>Проверок ещё не было.</p>
-        {% endif %}
-    </div>
-
-    <footer class="bg-light text-center py-4 mt-5">
-        <p>&copy; 2025 Анализатор страниц</p>
-    </footer>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="text-muted">Проверок ещё не было.</p>
+    {% endif %}
+</div>
+{% endblock %}
