@@ -20,7 +20,6 @@ def get_conn():
 
 
 def normalize_url(input_url: str) -> str:
-    """Нормализует URL: добавляет схему если нужно и возвращает scheme://netloc."""
     parsed = urlparse(input_url)
     if not parsed.scheme:
         parsed = urlparse(f"http://{input_url}")
@@ -28,28 +27,17 @@ def normalize_url(input_url: str) -> str:
 
 
 def parse_page(html_text: str) -> dict:
-    """Парсит HTML и возвращает title, h1, description (или None)."""
     soup = BeautifulSoup(html_text, "html.parser")
     title_tag = soup.find("title")
     h1_tag = soup.find("h1")
     desc_tag = soup.find("meta", attrs={"name": "description"})
-
     title = title_tag.text.strip() if title_tag else None
     h1 = h1_tag.text.strip() if h1_tag else None
-    description = None
-    if desc_tag:
-        description = desc_tag.get("content")
-        if description:
-            description = description.strip()
+    description = desc_tag.get("content").strip() if desc_tag and desc_tag.get("content") else None
     return {"title": title, "h1": h1, "description": description}
 
 
 def check_page(url: str):
-    """
-    Делает реальный HTTP-запрос к url, использует raise_for_status().
-    При успехе возвращает dict {status_code, title, h1, description}.
-    При ошибке возвращает None.
-    """
     try:
         response = requests.get(url, timeout=10)
         response.raise_for_status()
@@ -72,15 +60,18 @@ def index():
 @app.post('/urls')
 def add_url():
     raw_url = request.form.get('url')
-
-    # Валидация: пустой или слишком длинный
     if not raw_url or len(raw_url) > 255:
         flash('Некорректный URL', 'danger')
-        # вернуть index (форму) с кодом 422 — тесты ожидают именно это
+        return render_template('index.html'), 422
+
+    parsed = urlparse(raw_url)
+    if not parsed.netloc:
+        parsed = urlparse(f"http://{raw_url}")
+    if not parsed.netloc:
+        flash('Некорректный URL', 'danger')
         return render_template('index.html'), 422
 
     normalized = normalize_url(raw_url)
-
     conn = get_conn()
     cur = conn.cursor()
     try:
@@ -90,15 +81,13 @@ def add_url():
         )
         row = cur.fetchone()
         conn.commit()
-
         if row:
             flash('Страница успешно добавлена', 'success')
             return redirect(url_for('show_url', id=row['id']))
-        else:
-            cur.execute("SELECT id FROM urls WHERE name = %s;", (normalized,))
-            existing = cur.fetchone()
-            flash('Страница уже существует', 'info')
-            return redirect(url_for('show_url', id=existing['id']))
+        cur.execute("SELECT id FROM urls WHERE name = %s;", (normalized,))
+        existing = cur.fetchone()
+        flash('Страница уже существует', 'info')
+        return redirect(url_for('show_url', id=existing['id']))
     finally:
         cur.close()
         conn.close()
@@ -106,10 +95,6 @@ def add_url():
 
 @app.route('/urls')
 def list_urls():
-    """
-    Возвращает список URL вместе с информацией о последней проверке:
-    last_status и last_check (если есть).
-    """
     conn = get_conn()
     cur = conn.cursor()
     cur.execute("""
@@ -139,7 +124,6 @@ def list_urls():
 def show_url(id):
     conn = get_conn()
     cur = conn.cursor()
-
     cur.execute("SELECT * FROM urls WHERE id = %s;", (id,))
     url = cur.fetchone()
     if not url:
@@ -147,14 +131,12 @@ def show_url(id):
         cur.close()
         conn.close()
         return redirect(url_for('list_urls'))
-
     cur.execute(
         "SELECT * FROM url_checks WHERE url_id = %s ORDER BY created_at DESC;",
         (id,)
     )
     checks = cur.fetchall()
     url['checks'] = checks
-
     cur.close()
     conn.close()
     return render_template('url.html', url=url)
@@ -164,7 +146,6 @@ def show_url(id):
 def add_check(id):
     conn = get_conn()
     cur = conn.cursor()
-
     cur.execute("SELECT * FROM urls WHERE id = %s;", (id,))
     url = cur.fetchone()
     if not url:
@@ -172,7 +153,6 @@ def add_check(id):
         cur.close()
         conn.close()
         return redirect(url_for('list_urls'))
-
     try:
         result = check_page(url['name'])
         if result is None:
@@ -189,11 +169,8 @@ def add_check(id):
             flash("Страница успешно проверена", "success")
     except Exception:
         conn.rollback()
-        app.logger.exception("Ошибка при проверке страницы")
         flash("Произошла ошибка при проверке", "danger")
     finally:
         cur.close()
         conn.close()
-
     return redirect(url_for('show_url', id=id))
-
