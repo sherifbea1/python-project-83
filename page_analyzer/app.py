@@ -148,7 +148,12 @@ def show_url(id):
         conn.close()
         return redirect(url_for('list_urls'))
     cur.execute(
-        "SELECT * FROM url_checks WHERE url_id = %s ORDER BY created_at DESC;", (id,)
+        (
+            "SELECT * FROM url_checks "
+            "WHERE url_id = %s "
+            "ORDER BY created_at DESC;"
+        ),
+        (id,),
     )
     checks = cur.fetchall()
     url['checks'] = checks
