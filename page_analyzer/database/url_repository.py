@@ -13,13 +13,12 @@ def insert_url(normalized_url: str):
             ON CONFLICT (name) DO NOTHING
             RETURNING id;
             """,
-            (normalized_url,)
+            (normalized_url,),
         )
         row = cur.fetchone()
         conn.commit()
 
         return row["id"] if row else None
-
     finally:
         cur.close()
         conn.close()
@@ -29,7 +28,10 @@ def get_url_by_name(name: str):
     conn = get_conn()
     cur = conn.cursor()
 
-    cur.execute("SELECT * FROM urls WHERE name = %s;", (name,))
+    cur.execute(
+        "SELECT * FROM urls WHERE name = %s;",
+        (name,),
+    )
     row = cur.fetchone()
 
     cur.close()
@@ -41,7 +43,10 @@ def get_url_by_id(id: int):
     conn = get_conn()
     cur = conn.cursor()
 
-    cur.execute("SELECT * FROM urls WHERE id = %s;", (id,))
+    cur.execute(
+        "SELECT * FROM urls WHERE id = %s;",
+        (id,),
+    )
     row = cur.fetchone()
 
     cur.close()
