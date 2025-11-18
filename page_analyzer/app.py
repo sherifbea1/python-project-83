@@ -9,8 +9,8 @@ from flask import (
 )
 from dotenv import load_dotenv
 
-from .url_normalizer import normalize_url
-from .parser import check_page
+from .services.url_normalizer import normalize_url
+from .services.parser import check_page
 
 from .database.url_repository import (
     insert_url,
