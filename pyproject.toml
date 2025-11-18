@@ -2,7 +2,7 @@
 name = "hexlet-code"
 version = "0.1.0"
 description = "Hexlet project: Page Analyzer"
-authors = [{ name = "Your Name", email = "you@example.com" }]
+authors = [{ name = "Eugene", email = "you@example.com" }]
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
